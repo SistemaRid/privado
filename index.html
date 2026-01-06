@@ -2909,26 +2909,7 @@
               <p class="text-xs text-gray-300">${currentUserData.userType || (currentUserData.isAdmin ? 'Administrador' : 'Funcionário')}</p>
             </div>
             <div class="flex items-center space-x-2">
-              <div class="relative">
-                <button onclick="toggleNotifications()" class="p-2 rounded-lg hover:bg-gray-700 transition-colors relative">
-                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-                  </svg>
-                  <span id="notificationBadge" class="hidden absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">0</span>
-                </button>
-                <div id="notificationsPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 border border-gray-200 max-h-96 overflow-y-auto">
-                  <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h3 class="font-bold text-gray-800">Notificações</h3>
-                    <button onclick="markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold">
-                      Marcar todas como lidas
-                    </button>
-                  </div>
-                  <div id="notificationsList" class="divide-y divide-gray-100">
-                    <p class="text-gray-500 text-center py-8 text-sm">Nenhuma notificação</p>
-                  </div>
-                </div>
-              </div>
-              
+                            
               <div class="relative">
                 <button onclick="toggleHeaderMenu()" class="p-2 rounded-lg hover:bg-gray-700 transition-colors">
                   <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
