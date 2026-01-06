@@ -449,32 +449,45 @@
     }
 
     async function updateRid(ridId, updates) {
-      try {
-        // If status is being changed to CORRIGIDO, add conclusion date
-        if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
-          updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
-        }
-        
-        await db.collection('rids').doc(ridId).update(updates);
-        
-        // Get the RID to send notifications
-        const rid = allRids.find(r => r.id === ridId);
-        
-        // Notify admins about status changes
-        if (updates.status) {
-          const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
-          for (const admin of adminUsers) {
-            await createNotification(admin.id, {
-              type: 'rid_status_changed',
-              ridId: ridId,
-              ridNumber: rid.ridNumber,
-              title: 'Status da RID Atualizado',
-              message: `RID #${rid.ridNumber} foi atualizada para: ${updates.status}`,
-              ridLocation: rid.location,
-              deadline: null
-            });
-          }
-        }
+  try {
+    // Se marcou como CORRIGIDO, grava data de conclusão
+    if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
+      updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    
+    await db.collection('rids').doc(ridId).update(updates);
+    
+    // Buscar RID local (para notificações)
+    const rid = allRids.find(r => r.id === ridId);
+    
+    // Notificar admins sobre mudança de status
+    if (updates.status) {
+      const adminUsers = allUsers.filter(
+        u => u.isAdmin && u.id !== currentUser.uid
+      );
+      
+      for (const admin of adminUsers) {
+        await createNotification(admin.id, {
+          type: 'rid_status_changed',
+          ridId: ridId,
+          ridNumber: rid.ridNumber,
+          title: 'Status da RID Atualizado',
+          message: `RID #${rid.ridNumber} foi atualizada para: ${updates.status}`,
+          ridLocation: rid.location,
+          deadline: null
+        });
+      }
+    }
+
+    // 🔁 >>>> AQUI É O PONTO QUE FALTAVA <<<<
+    renderDesignatedPage?.();
+    renderEmployeeDesignatedPage?.();
+    renderDashboard?.();
+
+  } catch (error) {
+    console.error('Erro ao atualizar RID:', error);
+    alert('Erro ao atualizar a RID.');
+
         
         // Notify leader if they exist and it's not them making the change
         if (rid.responsibleLeader && rid.responsibleLeader !== currentUser.uid) {
