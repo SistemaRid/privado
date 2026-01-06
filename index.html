@@ -80,6 +80,11 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // 🔐 Auth secundário para cadastro de usuários (não derruba a sessão atual)
+    const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
+    const secondaryAuth = secondaryApp.auth();
+
+
     // Admin CPF List
     const ADMIN_CPFS = [
       '018.452.760-63',
@@ -998,10 +1003,22 @@
                     oninput="this.value = formatCPF(this.value)">
                 </div>
                 <div class="mb-4">
-                  <label class="block text-sm font-bold mb-2 text-gray-800">Setor</label>
-                  <input type="text" id="registerSector" placeholder="Seu setor" 
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg" required>
-                </div>
+  <label class="block text-sm font-bold mb-2 text-gray-700">Setor</label>
+  <select
+    name="sector"
+    required
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+  >
+    <option value="">Selecione o setor</option>
+    <option value="ADM">ADM</option>
+    <option value="M. MOVEL">M. MOVEL</option>
+    <option value="M. FIXA">M. FIXA</option>
+    <option value="M. ELÉTRICA">M. ELÉTRICA</option>
+    <option value="PRODUÇÃO">PRODUÇÃO</option>
+    <option value="MINA">MINA</option>
+  </select>
+</div>
+
                 <div class="mb-6">
                   <label class="block text-sm font-bold mb-2 text-gray-800">Senha</label>
                   <input type="password" id="registerPassword" placeholder="••••••••" 
@@ -2078,9 +2095,22 @@
               <input type="text" name="cpf" required maxlength="14" class="w-full px-4 py-2 border border-gray-300 rounded-lg" oninput="this.value = formatCPF(this.value)">
             </div>
             <div class="mb-4">
-              <label class="block text-sm font-bold mb-2 text-gray-700">Setor</label>
-              <input type="text" name="sector" required class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-            </div>
+  <label class="block text-sm font-bold mb-2 text-gray-700">Setor</label>
+  <select
+    name="sector"
+    required
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+  >
+    <option value="">Selecione o setor</option>
+    <option value="ADM">ADM</option>
+    <option value="M. MOVEL">M. MOVEL</option>
+    <option value="M. FIXA">M. FIXA</option>
+    <option value="M. ELÉTRICA">M. ELÉTRICA</option>
+    <option value="PRODUÇÃO">PRODUÇÃO</option>
+    <option value="MINA">MINA</option>
+  </select>
+</div>
+
             <div class="mb-6">
               <label class="block text-sm font-bold mb-2 text-gray-700">Senha Inicial</label>
               <input type="password" name="password" required minlength="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
@@ -2114,7 +2144,8 @@
         const password = form.password.value;
         const email = cpfToEmail(cpf);
 
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const userCredential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+
         
         const isAdminUser = ADMIN_CPFS.includes(cpf);
         const isDeveloperUser = DEVELOPER_CPFS.includes(cpf);
@@ -2129,9 +2160,6 @@
           userType: userType,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-
-        await auth.signOut();
-        await auth.signInWithEmailAndPassword(cpfToEmail(currentUserData.cpf), 'current_password');
         
         showToast('Funcionário adicionado com sucesso!');
         await loadUsers();
