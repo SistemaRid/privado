@@ -161,6 +161,10 @@
     }
 
     // Utility Functions
+    function getUserNameById(uid) {
+  const user = allUsers.find(u => u.id === uid);
+  return user ? user.name : 'Responsável';
+}
     function formatCPF(cpf) {
       return cpf.replace(/\D/g, '')
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -1043,8 +1047,8 @@
       }
     }
 
-    function canOpenRid() {
-  return isAdmin(); // admin e developer retornam true
+    function canOpenRid(rid) {
+  return isAdmin() || rid.responsibleLeader === currentUser.uid;
 }
 
     function renderAdminDashboard() {
@@ -1341,7 +1345,7 @@
                 <h3 class="text-xl font-bold text-gray-800 mb-6">RIDs da Semana</h3>
                 <div class="space-y-3">
                   ${weekRids.length === 0 ? '<p class="text-gray-500 text-center py-8">Nenhuma RID nesta semana</p>' : weekRids.slice(0, 10).map(rid => `
-                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4" onclick="canOpenRid() && showRidDetails('${rid.id}')">
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4" onclick="canOpenRid(${JSON.stringify(rid)}) && showRidDetails('${rid.id}')">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-6 flex-1">
                           <div class="flex items-center space-x-2">
