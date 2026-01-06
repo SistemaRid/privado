@@ -2752,7 +2752,9 @@
     }
 
     function renderDesignatedPage() {
-      const myDesignatedRids = allRids.filter(r => r.responsibleLeader === currentUser.uid && r.status !== 'CORRIGIDO');
+      const myDesignatedRids = allRids.filter(
+  r => r.responsibleLeader === currentUser.uid
+);
       const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
       
       const app = document.getElementById('app');
@@ -2909,7 +2911,7 @@
               <p class="text-xs text-gray-300">${currentUserData.userType || (currentUserData.isAdmin ? 'Administrador' : 'Funcionário')}</p>
             </div>
             <div class="flex items-center space-x-2">
-                            
+
               <div class="relative">
                 <button onclick="toggleHeaderMenu()" class="p-2 rounded-lg hover:bg-gray-700 transition-colors">
                   <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
