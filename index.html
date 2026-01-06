@@ -2756,9 +2756,7 @@
     }
 
     function renderDesignatedPage() {
-      const myDesignatedRids = allRids.filter(
-  r => r.responsibleLeader === currentUser.uid
-);
+      const myDesignatedRids = allRids.filter(r => r.responsibleLeader === currentUser.uid);
       const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
       
       const app = document.getElementById('app');
@@ -2782,7 +2780,7 @@
     }
 
     function renderEmployeeDesignatedPage() {
-      const myDesignatedRids = allRids.filter(r => r.responsibleLeader === currentUser.uid && r.status !== 'CORRIGIDO');
+      const myDesignatedRids = allRids.filter(r =>r.responsibleLeader === currentUser.uid &&r.status !== 'CORRIGIDO');
       const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
       
       const app = document.getElementById('app');
