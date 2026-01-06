@@ -1992,7 +1992,7 @@
         if (isAdmin()) {
           const leaderId = form.responsibleLeader.value;
           updates.responsibleLeader = leaderId || null;
-          updates.responsibleLeaderName = leaderId ? allUsers.find(u => u.id === leaderId)?.name : null;
+          updates.responsibleLeaderName = leaderId? getUserNameById(leaderId): null;
           updates.deadline = form.deadline.value ? firebase.firestore.Timestamp.fromDate(new Date(form.deadline.value)) : null;
           updates.observations = form.observations.value;
         }
