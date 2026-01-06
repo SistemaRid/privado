@@ -507,36 +507,47 @@
         status: 'EM ABERTO'
       };
       
-      const success = await updateRid(ridId, updates);
+      async function updateRid(ridId, updates) {
+  try {
+    // Se marcou como CORRIGIDO, grava data de conclusão
+    if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
+      updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    
+    await db.collection('rids').doc(ridId).update(updates);
+    
+    // Buscar RID local (para notificações)
+    const rid = allRids.find(r => r.id === ridId);
+    
+    // Notificar admins sobre mudança de status
+    if (updates.status) {
+      const adminUsers = allUsers.filter(
+        u => u.isAdmin && u.id !== currentUser.uid
+      );
       
-      if (success) {
-        // Create notification for the designated leader
-        const rid = allRids.find(r => r.id === ridId);
-        await createNotification(leaderId, {
-          type: 'rid_designated',
+      for (const admin of adminUsers) {
+        await createNotification(admin.id, {
+          type: 'rid_status_changed',
           ridId: ridId,
           ridNumber: rid.ridNumber,
-          title: 'Nova RID Designada',
-          message: `Você foi designado como responsável pela RID #${rid.ridNumber}`,
+          title: 'Status da RID Atualizado',
+          message: `RID #${rid.ridNumber} foi atualizada para: ${updates.status}`,
           ridLocation: rid.location,
-          deadline: deadline
+          deadline: null
         });
-        
-        // Notify all admins about the designation
-        const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
-        for (const admin of adminUsers) {
-          await createNotification(admin.id, {
-            type: 'rid_updated',
-            ridId: ridId,
-            ridNumber: rid.ridNumber,
-            title: 'RID Designada',
-            message: `${currentUserData.name} designou ${leaderName} para a RID #${rid.ridNumber}`,
-            ridLocation: rid.location,
-            deadline: deadline
-          });
-        }
       }
-      
+    }
+
+    // 🔁 >>>> AQUI É O PONTO QUE FALTAVA <<<<
+    renderDesignatedPage?.();
+    renderEmployeeDesignatedPage?.();
+    renderDashboard?.();
+
+  } catch (error) {
+    console.error('Erro ao atualizar RID:', error);
+    alert('Erro ao atualizar a RID.');
+  }
+}      
       return success;
     }
 
