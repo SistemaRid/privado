@@ -17,7 +17,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
   <style>
     body {
       box-sizing: border-box;
@@ -62,7 +61,6 @@
     }
   </style>
   <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full" style="background-color: #dfdfdf;">
   <div id="app" class="h-full" style="background-color: #dfdfdf;"></div>
@@ -499,57 +497,26 @@
     }
 
     async function designateRid(ridId, leaderId, leaderName, observations, deadline) {
-      const updates = {
-        responsibleLeader: leaderId,
-        responsibleLeaderName: leaderName,
-        deadline: deadline ? firebase.firestore.Timestamp.fromDate(new Date(deadline)) : null,
-        observations: observations,
-        status: 'EM ABERTO'
-      };
-      
-      async function updateRid(ridId, updates) {
-  try {
-    // Se marcou como CORRIGIDO, grava data de conclusão
-    if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
-      updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
-    }
-    
-    await db.collection('rids').doc(ridId).update(updates);
-    
-    // Buscar RID local (para notificações)
-    const rid = allRids.find(r => r.id === ridId);
-    
-    // Notificar admins sobre mudança de status
-    if (updates.status) {
-      const adminUsers = allUsers.filter(
-        u => u.isAdmin && u.id !== currentUser.uid
-      );
-      
-      for (const admin of adminUsers) {
-        await createNotification(admin.id, {
-          type: 'rid_status_changed',
-          ridId: ridId,
-          ridNumber: rid.ridNumber,
-          title: 'Status da RID Atualizado',
-          message: `RID #${rid.ridNumber} foi atualizada para: ${updates.status}`,
-          ridLocation: rid.location,
-          deadline: null
-        });
-      }
-    }
+  const updates = {
+    responsibleLeader: leaderId,
+    responsibleLeaderName: leaderName,
+    deadline: deadline
+      ? firebase.firestore.Timestamp.fromDate(new Date(deadline))
+      : null,
+    observations: observations,
+    status: 'EM ABERTO'
+  };
 
-    // 🔁 >>>> AQUI É O PONTO QUE FALTAVA <<<<
+  // ✅ usa a função updateRid GLOBAL (a correta)
+  const success = await updateRid(ridId, updates);
+
+  if (success) {
+    // 🔁 garante atualização visual
     renderDesignatedPage?.();
     renderEmployeeDesignatedPage?.();
     renderDashboard?.();
-
-  } catch (error) {
-    console.error('Erro ao atualizar RID:', error);
-    alert('Erro ao atualizar a RID.');
   }
-}      
-      return success;
-    }
+}
 
     // Direct deletion function (only for developers)
     async function deleteRidDirectly(ridId) {
@@ -2767,7 +2734,9 @@
     }
 
     function renderDesignatedPage() {
-      const myDesignatedRids = allRids.filter(r => r.responsibleLeader === currentUser.uid);
+      const myDesignatedRids = allRids.filter(
+  r => r.responsibleLeader === currentUser.uid && r.status !== 'CORRIGIDO'
+);
       const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
       
       const app = document.getElementById('app');
