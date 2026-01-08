@@ -2081,6 +2081,7 @@ const monthlyUserStats = Object.values(ridsByUser)
               <div class="space-y-3">
                 ${allUsers
   .filter(user => user && typeof user.name === 'string')
+  .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
   .map(user => `
 
                   <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4">
