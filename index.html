@@ -84,41 +84,6 @@
     const secondaryApp = firebase.initializeApp(firebaseConfig, "Secondary");
     const secondaryAuth = secondaryApp.auth();
 
-
-    // Admin CPF List
-    const ADMIN_CPFS = [
-      '018.452.760-63',
-      '207.954.180-00',
-      '385.129.940-04',
-      '512.480.310-90',
-      '641.705.928-56',
-      '729.814.207-80',
-      '803.671.549-19',
-      '918.204.367-02',
-      '064.597.813-41',
-      '149.238.750-69',
-      '236.781.409-07',
-      '387.592.641-36',
-      '452.803.197-55',
-      '560.914.723-88',
-      '694.185.302-10',
-      '222.222.222-22'
-    ];
-
-    // Developer CPF List (full access including direct deletion)
-    const DEVELOPER_CPFS = [
-      '027.493.861-05',
-      '194.820.573-40',
-      '306.157.924-78',
-      '478.620.315-62',
-      '589.731.480-01',
-      '065.023.641-60',
-      '070.507.761-65'
-      // Para adicionar um novo desenvolvedor:
-      // 1. Adicione o CPF aqui no formato: 'XXX.XXX.XXX-XX'
-      // 2. Exemplo: '123.456.789-00'
-    ];
-
     // Global State
     let currentUser = null;
     let currentUserData = '';
@@ -290,12 +255,13 @@
     }
 
     function isDeveloper() {
-      return currentUserData && DEVELOPER_CPFS.includes(currentUserData.cpf);
+     return currentUserData?.isDeveloper === true;
     }
 
     function isAdmin() {
-      return currentUserData && (ADMIN_CPFS.includes(currentUserData.cpf) || DEVELOPER_CPFS.includes(currentUserData.cpf));
+     return currentUserData?.isAdmin === true;
     }
+
 
     // Authentication Functions
     async function handleLogin(event) {
@@ -318,41 +284,42 @@
     }
 
     async function handleRegister(event) {
-      event.preventDefault();
-      const name = document.getElementById('registerName').value.toUpperCase();
-      const cpf = document.getElementById('registerCpf').value;
-      const sector = document.getElementById('registerSector').value;
-      const password = document.getElementById('registerPassword').value;
-      const button = event.target.querySelector('button[type="submit"]');
-      
-      button.disabled = true;
-      button.textContent = 'Cadastrando...';
+  event.preventDefault();
 
-      try {
-        const email = cpfToEmail(cpf);
-        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        
-        const isAdminUser = ADMIN_CPFS.includes(cpf);
-        const isDeveloperUser = DEVELOPER_CPFS.includes(cpf);
-        const userType = isDeveloperUser ? 'Desenvolvedor' : isAdminUser ? 'Administrador' : 'Funcionário';
-        
-        await db.collection('users').doc(userCredential.user.uid).set({
-          name: name,
-          cpf: cpf,
-          sector: sector,
-          isAdmin: isAdminUser || isDeveloperUser,
-          isDeveloper: isDeveloperUser,
-          userType: userType,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        showToast('Cadastro realizado com sucesso!');
-      } catch (error) {
-        showToast('Erro ao cadastrar: ' + error.message, 'error');
-        button.disabled = false;
-        button.textContent = 'Cadastrar';
-      }
-    }
+  const name = document.getElementById('registerName').value.toUpperCase();
+  const cpf = document.getElementById('registerCpf').value;
+  const sector = document.getElementById('registerSector').value;
+  const password = document.getElementById('registerPassword').value;
+  const button = event.target.querySelector('button[type="submit"]');
+
+  button.disabled = true;
+  button.textContent = 'Cadastrando...';
+
+  try {
+    const email = cpfToEmail(cpf);
+
+    // 🔐 usa auth secundário (correto)
+    const userCredential =
+      await secondaryAuth.createUserWithEmailAndPassword(email, password);
+
+    await db.collection('users').doc(userCredential.user.uid).set({
+      name,
+      cpf,
+      sector,
+      isAdmin: false,
+      isDeveloper: false,
+      userType: 'Funcionário',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showToast('Cadastro realizado com sucesso!');
+  } catch (error) {
+    showToast('Erro ao cadastrar: ' + error.message, 'error');
+    button.disabled = false;
+    button.textContent = 'Cadastrar';
+  }
+}
+
 
     async function handleLogout() {
       await auth.signOut();
@@ -1091,7 +1058,9 @@ filteredRids.forEach(rid => {
 
 // transforma em array e ordena (maior → menor)
 const monthlyUserStats = Object.values(ridsByUser)
+  .filter(u => u && typeof u.name === 'string' && u.name.trim() !== '')
   .sort((a, b) => b.count - a.count);
+
 
 
       const emitterCount = {};
@@ -1384,7 +1353,8 @@ const monthlyUserStats = Object.values(ridsByUser)
                 <h3 class="text-xl font-bold text-gray-800 mb-6">RIDs da Semana</h3>
                 <div class="space-y-3 max-h-[360px] overflow-y-auto pr-2">
                   ${weekRids.length === 0 ? '<p class="text-gray-500 text-center py-8">Nenhuma RID nesta semana</p>' : weekRids.slice(0, 10).map(rid => `
-                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4" onclick="canOpenRid(${JSON.stringify(rid)}) && showRidDetails('${rid.id}')">
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4"onclick="showRidDetails('${rid.id}')"
+')">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-6 flex-1">
                           <div class="flex items-center space-x-2">
@@ -1440,10 +1410,10 @@ const monthlyUserStats = Object.values(ridsByUser)
           <div class="flex items-center justify-between p-4 rounded-lg bg-gray-100">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-[#a8d5e2] text-white font-bold flex items-center justify-center">
-                ${user.name.charAt(0)}
+                ${user.name?.charAt(0) || '?'}
               </div>
               <span class="font-semibold text-gray-800">
-                ${user.name}
+                ${user.name || 'Usuário'}
               </span>
             </div>
 
@@ -2109,7 +2079,10 @@ const monthlyUserStats = Object.values(ridsByUser)
               </div>
 
               <div class="space-y-3">
-                ${allUsers.map(user => `
+                ${allUsers
+  .filter(user => user && typeof user.name === 'string')
+  .map(user => `
+
                   <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-4">
                     <div class="flex items-center gap-6">
                       <div class="flex-1 min-w-0">
@@ -2225,19 +2198,26 @@ const monthlyUserStats = Object.values(ridsByUser)
         const userCredential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
 
         
-        const isAdminUser = ADMIN_CPFS.includes(cpf);
-        const isDeveloperUser = DEVELOPER_CPFS.includes(cpf);
-        const userType = isDeveloperUser ? 'Desenvolvedor' : isAdminUser ? 'Administrador' : 'Funcionário';
-        
         await db.collection('users').doc(userCredential.user.uid).set({
-          name: name,
-          cpf: cpf,
-          sector: sector,
-          isAdmin: isAdminUser || isDeveloperUser,
-          isDeveloper: isDeveloperUser,
-          userType: userType,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+  name,
+  cpf,
+  sector,
+  isAdmin: false,
+  isDeveloper: false,
+  userType: 'Funcionário',
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+});
+
+        await db.collection('users').doc(userCredential.user.uid).set({
+  name: name,
+  cpf: cpf,
+  sector: sector,
+  isAdmin: false,
+  isDeveloper: false,
+  userType: 'Funcionário',
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+});
+
         
         showToast('Funcionário adicionado com sucesso!');
         await loadUsers();
