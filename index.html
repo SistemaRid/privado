@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href="manifest.json">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sistema RIDs">
 <meta name="theme-color" content="#6b9eb0">
   <link rel="icon" href="logo.png" type="image/png">
@@ -112,7 +112,8 @@
       '306.157.924-78',
       '478.620.315-62',
       '589.731.480-01',
-      '111.111.111-11'
+      '111.111.111-11',
+      '070.507.761-65'
       // Para adicionar um novo desenvolvedor:
       // 1. Adicione o CPF aqui no formato: 'XXX.XXX.XXX-XX'
       // 2. Exemplo: '123.456.789-00'
@@ -202,54 +203,41 @@
     }
 
     function getFilteredRids() {
-      const monthSelect = document.getElementById('dashboardMonth');
-      const yearSelect = document.getElementById('dashboardYear');
-      
-      if (!monthSelect || !yearSelect) {
-        // Return current month by default
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-        
-        return allRids.filter(r => {
-          const ridDate = r.emissionDate.toDate();
-          return ridDate.getMonth() + 1 === currentMonth && ridDate.getFullYear() === currentYear;
-        });
-      }
-      
-      const month = monthSelect.value;
-      const year = yearSelect.value;
-      
-      // If no filters selected, show current month
-      if (!month && !year) {
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-        
-        return allRids.filter(r => {
-          const ridDate = r.emissionDate.toDate();
-          return ridDate.getMonth() + 1 === currentMonth && ridDate.getFullYear() === currentYear;
-        });
-      }
-      
-      let filtered = allRids;
-      
-      if (month) {
-        filtered = filtered.filter(r => {
-          const ridMonth = r.emissionDate.toDate().getMonth() + 1;
-          return ridMonth === parseInt(month);
-        });
-      }
-      
-      if (year) {
-        filtered = filtered.filter(r => {
-          const ridYear = r.emissionDate.toDate().getFullYear();
-          return ridYear === parseInt(year);
-        });
-      }
-      
-      return filtered;
-    }
+  const periodInput = document.getElementById('dashboardPeriod');
+  const sectorSelect = document.getElementById('dashboardSector');
+
+  let filtered = allRids;
+
+  // 🔹 FILTRO POR PERÍODO (MÊS + ANO)
+  if (periodInput && periodInput.value) {
+    const [year, month] = periodInput.value.split('-').map(Number);
+
+    filtered = filtered.filter(r => {
+      const d = r.emissionDate.toDate();
+      return (
+        d.getFullYear() === year &&
+        d.getMonth() + 1 === month
+      );
+    });
+  } else {
+    // padrão: mês atual
+    const now = new Date();
+    filtered = filtered.filter(r => {
+      const d = r.emissionDate.toDate();
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() + 1 === now.getMonth() + 1
+      );
+    });
+  }
+
+  // 🔹 FILTRO POR SETOR
+  if (sectorSelect && sectorSelect.value) {
+    filtered = filtered.filter(r => r.sector === sectorSelect.value);
+  }
+  return filtered;
+}
+
 
     function filterDashboard() {
       renderAdminDashboard();
@@ -287,10 +275,10 @@
 }
 
     function clearDashboardFilters() {
-      document.getElementById('dashboardMonth').value = '';
-      document.getElementById('dashboardYear').value = '';
-      renderAdminDashboard();
-    }
+  document.getElementById('dashboardPeriod').value = '';
+  document.getElementById('dashboardSector').value = '';
+  renderAdminDashboard();
+}
 
     function toggleFilters() {
       const filterPanel = document.getElementById('filterPanel');
@@ -921,6 +909,28 @@
       document.body.appendChild(modal);
     }
 
+    async function updateMonthGoalDisplay(totalRids) {
+  const display = document.getElementById('monthGoalDisplay');
+  if (!display) return;
+
+  const now = new Date();
+  const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+  const doc = await db.collection('metas').doc(key).get();
+
+  if (!doc.exists) {
+    display.textContent = '';
+    return;
+  }
+
+  const target = doc.data().target;
+  const percent = Math.round((totalRids / target) * 100);
+  const remaining = Math.max(target - totalRids, 0);
+
+  display.textContent =
+    `Meta do Mês: ${totalRids}/${target} (${percent}%) • Faltam ${remaining} RIDs para conclusão`;
+}
+
     async function saveMonthlyGoal(event) {
       event.preventDefault();
       const form = event.target;
@@ -1048,8 +1058,10 @@
 
     function renderAdminDashboard() {
       const filteredRids = getFilteredRids();
-      
+ 
+    
       const totalRids = filteredRids.length;
+      updateMonthGoalDisplay(totalRids);
       const openRids = filteredRids.filter(r => r.status === 'EM ABERTO').length;
       const overdueRids = filteredRids.filter(r => r.status === 'VENCIDO').length;
       const correctedRids = filteredRids.filter(r => r.status === 'CORRIGIDO').length;
@@ -1060,6 +1072,27 @@
         const ridDate = r.emissionDate.toDate();
         return ridDate >= weekStart;
       });
+
+      // 📊 RIDs do MÊS por usuário
+const ridsByUser = {};
+
+filteredRids.forEach(rid => {
+  const userId = rid.emitterId || rid.emitterName;
+
+  if (!ridsByUser[userId]) {
+    ridsByUser[userId] = {
+      name: rid.emitterName,
+      count: 0
+    };
+  }
+
+  ridsByUser[userId].count++;
+});
+
+// transforma em array e ordena (maior → menor)
+const monthlyUserStats = Object.values(ridsByUser)
+  .sort((a, b) => b.count - a.count);
+
 
       const emitterCount = {};
       filteredRids.forEach(rid => {
@@ -1162,27 +1195,36 @@
                 </div>
                 <div class="flex items-end space-x-4">
                   <div class="flex-1">
-                    <label class="block text-sm font-semibold mb-2" style="color: #808080;">Mês</label>
-                    <select id="dashboardMonth" class="w-full px-4 py-2 border rounded-lg" style="border-color: #9c9494;">
-                      <option value="">Todos os meses</option>
-                      <option value="1">Janeiro</option>
-                      <option value="2">Fevereiro</option>
-                      <option value="3">Março</option>
-                      <option value="4">Abril</option>
-                      <option value="5">Maio</option>
-                      <option value="6">Junho</option>
-                      <option value="7">Julho</option>
-                      <option value="8">Agosto</option>
-                      <option value="9">Setembro</option>
-                      <option value="10">Outubro</option>
-                      <option value="11">Novembro</option>
-                      <option value="12">Dezembro</option>
-                    </select>
-                  </div>
-                  <div class="flex-1">
-                    <label class="block text-sm font-semibold mb-2" style="color: #808080;">Ano</label>
-                    <input type="number" id="dashboardYear" placeholder="Ex: 2024" min="2000" max="2100" class="w-full px-4 py-2 border rounded-lg" style="border-color: #9c9494;">
-                  </div>
+  <label class="block text-sm font-semibold mb-2" style="color:#808080;">
+    Período (Mês/Ano)
+  </label>
+  <input
+    type="month"
+    id="dashboardPeriod"
+    class="w-full px-4 py-2 border rounded-lg"
+    style="border-color:#9c9494;"
+  >
+</div>
+
+<div class="flex-1">
+  <label class="block text-sm font-semibold mb-2" style="color:#808080;">
+    Setor
+  </label>
+  <select
+    id="dashboardSector"
+    class="w-full px-4 py-2 border rounded-lg"
+    style="border-color:#9c9494;"
+  >
+    <option value="">Todos os setores</option>
+    <option value="ADM">ADM</option>
+    <option value="M. MOVEL">M. MOVEL</option>
+    <option value="M. FIXA">M. FIXA</option>
+    <option value="M. ELÉTRICA">M. ELÉTRICA</option>
+    <option value="PRODUÇÃO">PRODUÇÃO</option>
+    <option value="MINA">MINA</option>
+  </select>
+</div>
+
                   <button onclick="filterDashboard()" class="px-6 py-3 text-white rounded-lg font-bold hover:opacity-90 transition-opacity" style="background-color: #a8d5e2;">
                     Aplicar
                   </button>
@@ -1335,10 +1377,12 @@
                 </div>
               </div>
 
-              <!-- Week RIDs -->
+              <div class="space-y-10">
+
+             <!-- Week  RIDs -->
               <div class="bg-white rounded-xl shadow-lg p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-6">RIDs da Semana</h3>
-                <div class="space-y-3">
+                <div class="space-y-3 max-h-[360px] overflow-y-auto pr-2">
                   ${weekRids.length === 0 ? '<p class="text-gray-500 text-center py-8">Nenhuma RID nesta semana</p>' : weekRids.slice(0, 10).map(rid => `
                     <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4" onclick="canOpenRid(${JSON.stringify(rid)}) && showRidDetails('${rid.id}')">
                       <div class="flex items-center justify-between">
@@ -1379,6 +1423,40 @@
                   `).join('')}
                 </div>
               </div>
+
+
+              <!-- RIDs do Mês por Usuário -->
+<div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+  <h3 class="text-xl font-bold text-gray-800 mb-6">
+    RIDs do Mês por Usuário
+  </h3>
+
+  <div class="space-y-3 max-h-[360px] overflow-y-auto pr-2">
+
+    ${
+      monthlyUserStats.length === 0
+        ? '<p class="text-gray-500 text-center py-8">Nenhuma RID no período</p>'
+        : monthlyUserStats.map(user => `
+          <div class="flex items-center justify-between p-4 rounded-lg bg-gray-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-[#a8d5e2] text-white font-bold flex items-center justify-center">
+                ${user.name.charAt(0)}
+              </div>
+              <span class="font-semibold text-gray-800">
+                ${user.name}
+              </span>
+            </div>
+
+            <span class="text-xl font-bold text-[#6b9eb0]">
+              ${user.count}
+            </span>
+          </div>
+        `).join('')
+    }
+  </div>
+</div>
+
+
             </div>
           </div>
         </div>
@@ -2325,40 +2403,7 @@
             <div class="max-w-7xl mx-auto">
               <h1 class="text-3xl font-bold text-gray-800 mb-8">Solicitações Pendentes</h1>
 
-              <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Exclusões de RIDs</h2>
-                ${ridRequests.length === 0 ? 
-                  '<div class="bg-white rounded-xl shadow-lg p-8 text-center"><p class="text-gray-500">Nenhuma solicitação pendente</p></div>' :
-                  ridRequests.map(req => {
-                    const rid = allRids.find(r => r.id === req.ridId);
-                    return `
-                      <div class="bg-white rounded-xl shadow-lg p-6 mb-4">
-                        <div class="flex items-start justify-between">
-                          <div class="flex-1">
-                            <div class="flex items-center space-x-3 mb-3">
-                              <span class="px-4 py-2 text-white font-bold rounded-lg" style="background-color: #a8d5e2;">
-                                RID #${rid?.ridNumber || 'N/A'}
-                              </span>
-                              <span class="text-sm text-gray-500">${formatDate(req.createdAt)}</span>
-                            </div>
-                            <p class="font-bold text-gray-800 mb-2">Solicitante: ${req.requesterName}</p>
-                            <p class="text-gray-700 mb-2"><strong>Motivo:</strong> ${req.reason}</p>
-                            ${rid ? `<p class="text-sm text-gray-600">Local: ${rid.location}</p>` : ''}
-                          </div>
-                          <div class="flex space-x-2">
-                            <button onclick="approveRidDeletion('${req.id}', '${req.ridId}', '${req.requesterId}')" class="px-4 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors">
-                              Aprovar
-                            </button>
-                            <button onclick="rejectRidDeletion('${req.id}', '${req.requesterId}')" class="px-4 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-colors">
-                              Rejeitar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')
-                }
-              </div>
+            
 
               <div>
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Exclusões de Funcionários</h2>
@@ -2775,7 +2820,7 @@
           
           <div class="flex-1 overflow-auto p-8" style="background-color: #dfdfdf;">
             <div class="max-w-7xl mx-auto">
-              <h1 class="text-3xl font-bold text-gray-800 mb-8">Minhas RIDs Designados</h1>
+              <h1 class="text-3xl font-bold text-gray-800 mb-8">Meus RIDs Designados</h1>
 
               ${myDesignatedRids.length === 0 ? 
                 '<div class="bg-white rounded-xl shadow-lg p-12 text-center"><p class="text-gray-500 text-lg">Você não possui RIDs designados no momento</p></div>' :
@@ -3066,8 +3111,14 @@
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b7b0bbed6eaf200',t:'MTc2NzM2NTE4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
   <!-- FOOTER GLOBAL -->
-  <footer class="py-3 text-center text-xs text-gray-500 border-t bg-white">
-    © J. DEMITO | Todos os direitos reservados. Desenvolvido por <strong>Juan Carlos</strong>
-  </footer>
+  <footer class="fixed bottom-0 left-0 w-full h-6 bg-gray-200 flex items-center justify-center text-[11px] text-gray-600 z-40 relative">
+  <span class="text-center">
+    © J. DEMITO | Todos os direitos reservados. Desenvolvido por Juan Carlos
+  </span>
+
+  <span class="absolute right-3 text-[10px] text-gray-400">
+    v1.0.0
+  </span>
+</footer>
 </body>
 </html>
