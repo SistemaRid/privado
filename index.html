@@ -1083,7 +1083,7 @@ const monthlyUserStats = Object.values(ridsByUser)
         <div class="h-full flex flex-col">
           <!-- Header -->
           <div class="px-4 md:px-8 py-4 shadow-lg" style="background-color: #808080;">
-            <div class="flex items-center justify-between">
+           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
                 <h1 class="system-title text-lg md:text-2xl font-bold text-white">${config.system_title || defaultConfig.system_title}</h1>
                 <p class="company-name text-xs md:text-sm text-gray-300">${config.company_name || defaultConfig.company_name}</p>
@@ -1211,7 +1211,7 @@ const monthlyUserStats = Object.values(ridsByUser)
               <!-- Stats Cards -->
               <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
                 <div class="rounded-xl shadow-lg p-3 md:p-6 card-hover bg-white">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
                       <p class="text-xs md:text-sm font-bold mb-1 text-gray-600">Total de RIDs</p>
                       <p class="text-xl md:text-3xl font-bold text-gray-800">${totalRids}</p>
@@ -1226,7 +1226,8 @@ const monthlyUserStats = Object.values(ridsByUser)
                 </div>
 
                 <div class="rounded-xl shadow-lg p-3 md:p-6 card-hover bg-white">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+
                     <div>
                       <p class="text-xs md:text-sm font-bold mb-1 text-gray-600">Em Andamento</p>
                       <p class="text-xl md:text-3xl font-bold text-orange-600">${openRids}</p>
@@ -1240,7 +1241,7 @@ const monthlyUserStats = Object.values(ridsByUser)
                 </div>
 
                 <div class="rounded-xl shadow-lg p-3 md:p-6 card-hover bg-white">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
                       <p class="text-xs md:text-sm font-bold mb-1 text-gray-600">Vencidas</p>
                       <p class="text-xl md:text-3xl font-bold text-red-600">${overdueRids}</p>
@@ -1254,7 +1255,7 @@ const monthlyUserStats = Object.values(ridsByUser)
                 </div>
 
                 <div class="rounded-xl shadow-lg p-3 md:p-6 card-hover bg-white">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                     <div>
                       <p class="text-xs md:text-sm font-bold mb-1 text-gray-600">Corrigidas</p>
                       <p class="text-xl md:text-3xl font-bold text-green-600">${correctedRids}</p>
@@ -1360,40 +1361,60 @@ const monthlyUserStats = Object.values(ridsByUser)
                   ${weekRids.length === 0 ? '<p class="text-gray-500 text-center py-8">Nenhuma RID nesta semana</p>' : weekRids.slice(0, 10).map(rid => `
                     <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4"onclick="showRidDetails('${rid.id}')"
 ')">
-                      <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-6 flex-1">
-                          <div class="flex items-center space-x-2">
-                            <span class="text-xs font-bold text-gray-500">Nº</span>
-                            <span class="px-4 py-2 text-white font-bold rounded-lg text-base" style="background-color: #a8d5e2;">
-                              ${rid.ridNumber}
-                            </span>
-                          </div>
-                          
-                          <div class="w-40 min-w-0">
-                            <span class="text-sm font-semibold text-gray-800">${rid.emitterName}</span>
-                          </div>
-                          
-                          <div class="flex-1 min-w-0">
-                            <span class="text-sm text-gray-600">${rid.description.substring(0, 50)}...</span>
-                          </div>
-                          
-                          <div class="w-32">
-                            <span class="text-sm font-semibold text-gray-800">${rid.unit}</span>
-                          </div>
-                          
-                          <div class="w-32">
-                            <span class="px-3 py-1 rounded-lg font-bold text-xs ${getRiskColor(rid.riskClassification)}">
-                              ${rid.riskClassification}
-                            </span>
-                          </div>
-                          
-                          <div class="w-32">
-                            <span class="px-3 py-1 rounded-lg font-bold text-xs ${getStatusColor(rid.status)}">
-                              ${rid.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <div class="flex items-center justify-between w-full">
+
+  <!-- 📱 MOBILE (somente RID + Emitente) -->
+  <div class="block md:hidden">
+    <p class="text-sm font-bold text-gray-800">
+      RID #${rid.ridNumber}
+    </p>
+    <p class="text-xs text-gray-600">
+      ${rid.emitterName}
+    </p>
+  </div>
+
+  <!-- 🖥️ DESKTOP (layout completo atual) -->
+  <div class="hidden md:flex items-center space-x-6 flex-1">
+    <div class="flex items-center space-x-2">
+      <span class="text-xs font-bold text-gray-500">Nº</span>
+      <span class="px-4 py-2 text-white font-bold rounded-lg text-base" style="background-color: #a8d5e2;">
+        ${rid.ridNumber}
+      </span>
+    </div>
+
+    <div class="w-40 min-w-0">
+      <span class="text-sm font-semibold text-gray-800">
+        ${rid.emitterName}
+      </span>
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <span class="text-sm text-gray-600">
+        ${rid.description.substring(0, 50)}...
+      </span>
+    </div>
+
+    <div class="w-32">
+      <span class="text-sm font-semibold text-gray-800">
+        ${rid.unit}
+      </span>
+    </div>
+
+    <div class="w-32">
+      <span class="px-3 py-1 rounded-lg font-bold text-xs ${getRiskColor(rid.riskClassification)}">
+        ${rid.riskClassification}
+      </span>
+    </div>
+
+    <div class="w-32">
+      <span class="px-3 py-1 rounded-lg font-bold text-xs ${getStatusColor(rid.status)}">
+        ${rid.status}
+      </span>
+    </div>
+  </div>
+
+</div>
+
                     </div>
                   `).join('')}
                 </div>
@@ -1533,50 +1554,91 @@ const monthlyUserStats = Object.values(ridsByUser)
       `;
     }
 
-    function renderRidsList(rids) {
-      if (rids.length === 0) {
-        return '<div class="bg-white rounded-xl shadow-lg p-12 text-center"><p class="text-gray-500 text-lg">Nenhuma RID encontrada</p></div>';
-      }
+    function isMobile() {
+  return window.innerWidth < 768;
+}
 
-      return rids.map(rid => `
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4" onclick="showRidDetails('${rid.id}')">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-6 flex-1">
-              <div class="flex items-center space-x-2">
-                <span class="text-xs font-bold text-gray-500">Nº</span>
-                <span class="px-4 py-2 text-white font-bold rounded-lg text-base" style="background-color: #a8d5e2;">
-                  ${rid.ridNumber}
-                </span>
-              </div>
-              
-              <div class="w-40 min-w-0">
-                <span class="text-sm font-semibold text-gray-800">${rid.emitterName}</span>
-              </div>
-              
-              <div class="flex-1 min-w-0">
-                <span class="text-sm text-gray-600">${rid.description.substring(0, 50)}...</span>
-              </div>
-              
-              <div class="w-32">
-                <span class="text-sm font-semibold text-gray-800">${rid.unit}</span>
-              </div>
-              
-              <div class="w-32">
-                <span class="px-3 py-1 rounded-lg font-bold text-xs ${getRiskColor(rid.riskClassification)}">
-                  ${rid.riskClassification}
-                </span>
-              </div>
-              
-              <div class="w-32">
-                <span class="px-3 py-1 rounded-lg font-bold text-xs ${getStatusColor(rid.status)}">
-                  ${rid.status}
-                </span>
-              </div>
-            </div>
+function isAdminOrDev() {
+  return isAdmin() || isDeveloper();
+}
+
+
+    function renderRidsList(rids) {
+  if (rids.length === 0) {
+    return `
+      <div class="bg-white rounded-xl shadow-lg p-12 text-center">
+        <p class="text-gray-500 text-lg">Nenhuma RID encontrada</p>
+      </div>
+    `;
+  }
+
+  // 📱 MOBILE → Admin ou Dev → lista simples
+  if (isMobile() && isAdminOrDev()) {
+    return rids.map(rid => `
+      <div
+        class="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:bg-gray-50"
+        onclick="showRidDetails('${rid.id}')"
+      >
+        <div class="font-bold text-gray-800 text-lg">
+          RID #${rid.ridNumber}
+        </div>
+
+        <div class="text-sm text-gray-600 mt-1">
+          ${rid.emitterName || 'Sem nome'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 🖥️ DESKTOP → comportamento atual (NÃO MUDA)
+  return rids.map(rid => `
+    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer p-4"
+         onclick="showRidDetails('${rid.id}')">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div class="flex items-center space-x-6 flex-1">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold text-gray-500">Nº</span>
+            <span class="px-4 py-2 text-white font-bold rounded-lg text-base"
+                  style="background-color: #a8d5e2;">
+              ${rid.ridNumber}
+            </span>
+          </div>
+
+          <div class="w-40 min-w-0">
+            <span class="text-sm font-semibold text-gray-800">
+              ${rid.emitterName}
+            </span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <span class="text-sm text-gray-600">
+              ${rid.description.substring(0, 50)}...
+            </span>
+          </div>
+
+          <div class="w-32">
+            <span class="text-sm font-semibold text-gray-800">
+              ${rid.unit}
+            </span>
+          </div>
+
+          <div class="w-32">
+            <span class="px-3 py-1 rounded-lg font-bold text-xs ${getRiskColor(rid.riskClassification)}">
+              ${rid.riskClassification}
+            </span>
+          </div>
+
+          <div class="w-32">
+            <span class="px-3 py-1 rounded-lg font-bold text-xs ${getStatusColor(rid.status)}">
+              ${rid.status}
+            </span>
           </div>
         </div>
-      `).join('');
-    }
+      </div>
+    </div>
+  `).join('');
+}
+
 
     function getStatusColor(status) {
       switch(status) {
@@ -2827,7 +2889,7 @@ const monthlyUserStats = Object.values(ridsByUser)
         <div class="h-full flex flex-col">
           <!-- Header Simplificado para Funcionários -->
           <div class="px-4 md:px-8 py-4 shadow-lg" style="background-color: #808080;">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                <img
     src="https://www.jdemito.com.br/wp-content/themes/jdemito/img/logo.png"
     alt="Logo JDemito"
@@ -2887,7 +2949,7 @@ const monthlyUserStats = Object.values(ridsByUser)
         <div class="h-full flex flex-col">
           <!-- Header Simplificado para Funcionários -->
           <div class="px-4 md:px-8 py-4 shadow-lg" style="background-color: #808080;">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
               <div>
                 <h1 class="system-title text-lg md:text-2xl font-bold text-white">${config.system_title || defaultConfig.system_title}</h1>
                 <p class="company-name text-xs md:text-sm text-gray-300">${config.company_name || defaultConfig.company_name}</p>
@@ -2944,7 +3006,7 @@ const monthlyUserStats = Object.values(ridsByUser)
     function renderHeader(config) {
       return `
         <div class="px-4 md:px-8 py-4 shadow-lg" style="background-color: #808080;">
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
               <h1 class="system-title text-lg md:text-2xl font-bold text-white">${config.system_title || defaultConfig.system_title}</h1>
               <p class="company-name text-xs md:text-sm text-gray-300">${config.company_name || defaultConfig.company_name}</p>
