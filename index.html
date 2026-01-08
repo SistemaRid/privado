@@ -782,12 +782,17 @@
     }
 
     async function loadUsers() {
-      const snapshot = await db.collection('users').get();
-      allUsers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-    }
+  const snapshot = await db.collection('users').get();
+
+  allUsers = snapshot.docs
+    .map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+    .filter(user => user && typeof user.name === 'string')
+    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+}
+
 
     async function loadMonthlyGoal() {
       try {
@@ -3098,7 +3103,7 @@ const monthlyUserStats = Object.values(ridsByUser)
   </span>
 
   <span class="absolute right-3 text-[10px] text-gray-400">
-    v1.0.0
+    v1.0.1
   </span>
 </footer>
 </body>
