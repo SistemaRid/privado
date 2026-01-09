@@ -1753,13 +1753,14 @@ function isAdminOrDev() {
     }
 
     function showCreateRidModal() {
+      document.body.style.overflow = 'hidden';
       const modal = document.createElement('div');
       modal.className = 'modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
       modal.innerHTML = `
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
           <div class="sticky top-0 bg-white border-b-2 px-8 py-6 flex items-center justify-between" style="border-color: #a8d5e2;">
             <h2 class="text-2xl font-bold text-gray-800">Criar Nova RID</h2>
-            <button onclick="this.closest('.modal-backdrop').remove()" class="text-gray-400 hover:text-gray-600">
+            <button onclick="closeRidModal(this)" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
               </svg>
@@ -3258,7 +3259,7 @@ function isAdminOrDev() {
   </span>
 
   <span class="absolute right-3 text-[10px] text-gray-400">
-    v1.0.6
+    v1.0.9
   </span>
 </footer>
 </body>
