@@ -507,7 +507,7 @@ async function getNextRidNumberSafe() {
       }
 
       const modal = document.createElement('div');
-      modal.className = 'modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+      modal.className = 'modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overscroll-contain touch-none';
       modal.innerHTML = `
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
           <div class="border-b-2 px-6 py-4 bg-red-50" style="border-color: #ff6b6b;">
@@ -1755,9 +1755,9 @@ function isAdminOrDev() {
     function showCreateRidModal() {
       document.body.style.overflow = 'hidden';
       const modal = document.createElement('div');
-      modal.className = 'modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+      modal.className = 'modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overscroll-contain touch-none';
       modal.innerHTML = `
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto overscroll-contain touch-pan-y">
           <div class="sticky top-0 bg-white border-b-2 px-8 py-6 flex items-center justify-between" style="border-color: #a8d5e2;">
             <h2 class="text-2xl font-bold text-gray-800">Criar Nova RID</h2>
             <button onclick="closeRidModal(this)" class="text-gray-400 hover:text-gray-600">
