@@ -78,6 +78,23 @@ input[type="date"] {
   line-height: 1.5;
 }
 
+/* 📱 Layout mobile – lista de funcionários simplificada */
+@media (max-width: 768px) {
+  .employee-cpf,
+  .employee-sector {
+    display: none !important;
+  }
+
+  .employee-card {
+    padding: 1rem;
+  }
+
+  .employee-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+}
+
   </style>
   <style>@view-transition { navigation: auto; }</style>
  </head>
