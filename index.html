@@ -794,13 +794,29 @@ async function getNextRidNumberSafe() {
     }
 
     // Data Loading Functions
-    async function loadRids() {
-      const snapshot = await db.collection('rids').orderBy('createdAt', 'desc').get();
+   function listenRidsRealtime() {
+  return db.collection('rids')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
       allRids = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-    }
+
+      // 🔥 Atualiza apenas a tela que já está aberta
+      if (window.currentPage === 'dashboard') {
+        renderDashboard();
+      }
+      if (window.currentPage === 'search') {
+        renderSearchPage();
+      }
+      if (window.currentPage === 'designated') {
+        renderDesignatedPage();
+      }
+
+      updateGoalDisplay();
+    });
+}
 
     async function loadUsers() {
   const snapshot = await db.collection('users').get();
@@ -1050,6 +1066,8 @@ async function getNextRidNumberSafe() {
 }
 
     function renderAdminDashboard() {
+      window.currentPage = 'dashboard';
+
       const filteredRids = getFilteredRids();
  
     
@@ -1485,6 +1503,7 @@ const monthlyUserStats = Object.values(ridsByUser)
     }
 
     function renderSearchPage() {
+      window.currentPage = 'search';
       const config = window.elementSdk ? window.elementSdk.config : defaultConfig;
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
@@ -1766,9 +1785,17 @@ function isAdminOrDev() {
               </div>
               
               <div>
-                <label class="block text-sm font-bold mb-2 text-gray-700">3. Unidade</label>
-                <input type="text" name="unit" required class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Nome da unidade">
-              </div>
+  <label class="block text-sm font-bold mb-2 text-gray-700">3. Unidade</label>
+  <input
+    type="text"
+    name="unit"
+    required
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+    placeholder="Nome da unidade"
+    oninput="this.value = this.value.toUpperCase()"
+  >
+</div>
+
 
               <div>
                 <label class="block text-sm font-bold mb-2 text-gray-700">4. Setor do Emitente</label>
@@ -1921,10 +1948,17 @@ function isAdminOrDev() {
               </div>
 
               <div>
-                <label class="block text-sm font-bold text-gray-500 mb-2">Unidade</label>
-                <input type="text" name="unit" value="${rid.unit}" 
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-              </div>
+  <label class="block text-sm font-bold text-gray-500 mb-2">Unidade</label>
+  <input
+    type="text"
+    name="unit"
+    value="${rid.unit}"
+    class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+    required
+    oninput="this.value = this.value.toUpperCase()"
+  >
+</div>
+
 
               <div>
                 <label class="block text-sm font-bold text-gray-500 mb-2">Setor</label>
@@ -2876,6 +2910,7 @@ function isAdminOrDev() {
     }
 
     function renderDesignatedPage() {
+      window.currentPage = 'designated';
       const myDesignatedRids = allRids.filter(
   r => r.responsibleLeader === currentUser.uid && r.status !== 'CORRIGIDO'
 );
@@ -3186,7 +3221,7 @@ function isAdminOrDev() {
       document.getElementById('loginTab').style.color = '#6b7280';
     }
 
-    auth.onAuthStateChanged(async (user) => {
+   auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUser = user;
 
@@ -3194,11 +3229,12 @@ function isAdminOrDev() {
     currentUserData = userDoc.data();
 
     await loadUsers();
-    await loadRids();
 
-    await garantirNumeracaoRids(); // ✅ PASSO 3 AQUI
+    // 🔥 Ativa atualização em tempo real das RIDs
+    listenRidsRealtime();
 
-    await loadRids(); // 🔁 recarrega já numeradas
+    // 🔧 Garante que RIDs antigas sem número sejam corrigidas
+    await garantirNumeracaoRids();
 
     await loadNotifications();
     await loadMonthlyGoal();
@@ -3212,6 +3248,7 @@ function isAdminOrDev() {
 });
 
 
+
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b7b0bbed6eaf200',t:'MTc2NzM2NTE4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
   <!-- FOOTER GLOBAL -->
@@ -3221,7 +3258,7 @@ function isAdminOrDev() {
   </span>
 
   <span class="absolute right-3 text-[10px] text-gray-400">
-    v1.0.2
+    v1.0.6
   </span>
 </footer>
 </body>
