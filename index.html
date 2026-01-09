@@ -2448,6 +2448,11 @@ function isAdminOrDev() {
       document.body.appendChild(modal);
     }
 
+    function closeRidModal(el) {
+  document.body.style.overflow = '';
+  el.closest('.modal-backdrop').remove();
+}
+
     async function confirmDeleteEmployee(userId, userName) {
       try {
         // Delete the user
