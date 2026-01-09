@@ -59,6 +59,17 @@
       border-color: #a8d5e2;
       box-shadow: 0 0 0 3px rgba(168, 213, 226, 0.2);
     }
+    /* 🔒 trava swipe horizontal no iOS quando modal está aberto */
+.modal-backdrop {
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+/* 🔓 libera scroll vertical dentro do modal */
+.modal-backdrop > div {
+  touch-action: pan-y;
+}
+
   </style>
   <style>@view-transition { navigation: auto; }</style>
  </head>
