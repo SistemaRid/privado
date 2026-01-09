@@ -69,6 +69,14 @@
 .modal-backdrop > div {
   touch-action: pan-y;
 }
+/* Corrige altura do input date no iOS */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  line-height: 1.5;
+}
 
   </style>
   <style>@view-transition { navigation: auto; }</style>
