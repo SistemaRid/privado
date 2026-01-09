@@ -134,6 +134,27 @@
   const user = allUsers.find(u => u.id === uid);
   return user ? user.name : 'Responsável';
 }
+
+async function getNextRidNumberSafe() {
+  const counterRef = db.collection("counters").doc("rids");
+
+  return db.runTransaction(async (transaction) => {
+    const doc = await transaction.get(counterRef);
+
+    if (!doc.exists) {
+      throw "Documento counters/rids não existe";
+    }
+
+    const last = doc.data().lastNumber || 0;
+    const next = last + 1;
+
+    transaction.update(counterRef, { lastNumber: next });
+
+    return String(next).padStart(5, "0");
+  });
+}
+
+
     function formatCPF(cpf) {
       return cpf.replace(/\D/g, '')
         .replace(/(\d{3})(\d)/, '$1.$2')
@@ -336,7 +357,7 @@
       button.textContent = 'Criando RID...';
 
       try {
-        const ridNumber = getNextRidNumber();
+        const ridNumber = await getNextRidNumberSafe();
         const leaderId = form.responsibleLeader.value;
         const leaderName = leaderId ? allUsers.find(u => u.id === leaderId)?.name : null;
         
