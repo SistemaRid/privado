@@ -1897,9 +1897,9 @@ function isAdminOrDev() {
                 <label class="block text-sm font-bold mb-2 text-gray-700">13. Designar para um Líder</label>
                 <select name="responsibleLeader" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                   <option value="">Designar depois</option>
-                  ${allUsers.filter(u => u.isAdmin).map(u => `
-                    <option value="${u.id}">${u.name}</option>
-                  `).join('')}
+                  ${allUsers.filter(u => u.userType === 'Administrador').map(u => `
+  <option value="${u.id}">${u.name}</option>
+`).join('')}
                 </select>
               </div>
             </div>
