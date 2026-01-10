@@ -448,54 +448,61 @@ async function getNextRidNumberSafe() {
     }
 
     async function updateRid(ridId, updates) {
-      try {
-        // If status is being changed to CORRIGIDO, add conclusion date
-        if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
-          updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
-        }
-        
-        await db.collection('rids').doc(ridId).update(updates);
-        
-        // Get the RID to send notifications
-        const rid = allRids.find(r => r.id === ridId);
-        
-        // Notify admins about status changes
-        if (updates.status) {
-          const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
-          for (const admin of adminUsers) {
-            await createNotification(admin.id, {
-              type: 'rid_status_changed',
-              ridId: ridId,
-              ridNumber: rid.ridNumber,
-              title: 'Status da RID Atualizado',
-              message: `RID #${rid.ridNumber} foi atualizada para: ${updates.status}`,
-              ridLocation: rid.location,
-              deadline: null
-            });
-          }
-        }
-        
-        // Notify leader if they exist and it's not them making the change
-        if (rid.responsibleLeader && rid.responsibleLeader !== currentUser.uid) {
-          await createNotification(rid.responsibleLeader, {
-            type: 'rid_updated',
-            ridId: ridId,
-            ridNumber: rid.ridNumber,
-            title: 'RID Atualizada',
-            message: `A RID #${rid.ridNumber} foi atualizada por ${currentUserData.name}`,
-            ridLocation: rid.location,
-            deadline: null
-          });
-        }
-        
-        showToast('RID atualizada com sucesso!');
-        await loadRids();
-        return true;
-      } catch (error) {
-        showToast('Erro ao atualizar RID: ' + error.message, 'error');
-        return false;
+  try {
+    // Se virou CORRIGIDO, grava data
+    if (updates.status === 'CORRIGIDO' && !updates.conclusionDate) {
+      updates.conclusionDate = firebase.firestore.FieldValue.serverTimestamp();
+    }
+
+    await db.collection('rids').doc(ridId).update(updates);
+
+    const rid = allRids.find(r => r.id === ridId);
+
+    // 🔔 Notifica admins
+    if (updates.status) {
+      const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
+      for (const admin of adminUsers) {
+        await createNotification(admin.id, {
+          type: 'rid_status_changed',
+          ridId: ridId,
+          ridNumber: rid?.ridNumber || '',
+          title: 'Status da RID Atualizado',
+          message: `RID #${rid?.ridNumber} foi atualizada para: ${updates.status}`,
+          ridLocation: rid?.location || '',
+          deadline: null
+        });
       }
     }
+
+    // 🔔 Notifica responsável
+    if (rid?.responsibleLeader && rid.responsibleLeader !== currentUser.uid) {
+      await createNotification(rid.responsibleLeader, {
+        type: 'rid_updated',
+        ridId: ridId,
+        ridNumber: rid?.ridNumber || '',
+        title: 'RID Atualizada',
+        message: `A RID #${rid?.ridNumber} foi atualizada por ${currentUserData.name}`,
+        ridLocation: rid?.location || '',
+        deadline: null
+      });
+    }
+
+    // 🧹 Fecha o modal de detalhes
+    document.querySelectorAll('.modal-backdrop').forEach(m => m.remove());
+
+    // 🔥 NÃO usa loadRids — realtime já atualiza
+    if (window.currentPage === 'dashboard') renderAdminDashboard();
+    if (window.currentPage === 'search') renderSearchPage();
+    if (window.currentPage === 'designated') renderDesignatedPage();
+
+    showToast('RID atualizada com sucesso!');
+    return true;
+  } catch (error) {
+    showToast('Erro ao atualizar RID: ' + error.message, 'error');
+    return false;
+  }
+}
+
 
     async function designateRid(ridId, leaderId, leaderName, observations, deadline) {
   const updates = {
