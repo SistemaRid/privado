@@ -551,36 +551,40 @@ async function getNextRidNumberSafe() {
     }
 
     async function confirmDeleteRid(ridId) {
-      try {
-        const rid = allRids.find(r => r.id === ridId);
-        
-        // Delete the RID
-        await db.collection('rids').doc(ridId).delete();
-        
-        // Notify all admins about deletion
-        const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
-        for (const admin of adminUsers) {
-          await createNotification(admin.id, {
-            type: 'rid_deleted',
-            ridId: '',
-            ridNumber: rid.ridNumber,
-            title: 'RID Excluída',
-            message: `${currentUserData.name} (Desenvolvedor) excluiu a RID #${rid.ridNumber}`,
-            ridLocation: rid.location,
-            deadline: null
-          });
-        }
-        
-        showToast('RID excluída com sucesso!');
-        await loadRids();
-        
-        // Close all modals
-        document.querySelectorAll('.modal-backdrop').forEach(m => m.remove());
-        renderDashboard();
-      } catch (error) {
-        showToast('Erro ao excluir RID: ' + error.message, 'error');
-      }
+  try {
+    const rid = allRids.find(r => r.id === ridId);
+
+    // 🔥 Apaga o RID
+    await db.collection('rids').doc(ridId).delete();
+
+    // 🔔 Notifica admins
+    const adminUsers = allUsers.filter(u => u.isAdmin && u.id !== currentUser.uid);
+    for (const admin of adminUsers) {
+      await createNotification(admin.id, {
+        type: 'rid_deleted',
+        ridId: '',
+        ridNumber: rid?.ridNumber || '',
+        title: 'RID Excluída',
+        message: `${currentUserData.name} (Desenvolvedor) excluiu a RID #${rid?.ridNumber || ''}`,
+        ridLocation: rid?.location || '',
+        deadline: null
+      });
     }
+
+    // 🧹 FECHA TODOS OS MODAIS (RID + confirmação)
+    document.querySelectorAll('.modal-backdrop').forEach(m => m.remove());
+
+    // 🔥 NÃO CHAMA loadRids() (listener já atualiza)
+    // Apenas atualiza a tela atual
+    if (window.currentPage === 'dashboard') renderAdminDashboard();
+    if (window.currentPage === 'search') renderSearchPage();
+    if (window.currentPage === 'designated') renderDesignatedPage();
+
+    showToast('RID excluída com sucesso!');
+  } catch (error) {
+    showToast('Erro ao excluir RID: ' + error.message, 'error');
+  }
+}
 
     // Notification Functions
     async function createNotification(userId, notificationData) {
